@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from numpy.fft import *
 from mpl_toolkits.mplot3d import Axes3D
 
-def fft_coreg(master,slave):
+def fft_coreg_trans(master,slave):
 
     # hunning
     hy = np.hanning(master.shape[0])
@@ -21,7 +21,41 @@ def fft_coreg(master,slave):
     master_nfd = master_fd/np.abs(master_fd)
     slave_nfd = slave_fd/np.abs(slave_fd)
 
-    usfac = 1000
+    usfac = 100
+    output, Nc, Nr, peak_map = dftregistration(master_nfd,slave_nfd,usfac)
+
+    nr, nc = slave.shape
+    diffphase = output[1]
+    row_shift = output[2]
+    col_shift = output[3]
+
+    # print(col_shift[0],row_shift[0])
+
+    # shift by cmul and ifft
+    slave_fd_shift = slave_fd*np.exp(1j*2*np.pi*(-row_shift*Nr/nr-col_shift*Nc/nc))*np.exp(1j*diffphase)
+    slave_shift = ifft2(slave_fd_shift)
+    slave_shift = np.abs(slave_shift)
+
+    return row_shift[0], col_shift[0], slave_shift, peak_map
+
+def fft_coreg(master,slave):
+
+    # hunning
+    # hy = np.hanning(master.shape[0])
+    # hx = np.hanning(master.shape[1])
+    # hw = hy.reshape(hy.shape[0],1) * hx
+    # master = master * hw
+    # slave = slave * hw
+
+    # fft2
+    master_fd = fft2(master)
+    slave_fd = fft2(slave)
+
+    # normalization
+    master_nfd = master_fd/np.abs(master_fd)
+    slave_nfd = slave_fd/np.abs(slave_fd)
+
+    usfac = 100
     output, Nc, Nr, peak_map = dftregistration(master_nfd,slave_nfd,usfac)
 
     nr, nc = slave.shape
@@ -141,8 +175,8 @@ def FTpad(imFT,outsize):
 def main():
 
     ## 
-    trans_true = [0, 0]
-    angle_true = 1
+    trans_true = [10, -10]
+    angle_true = 0
     scale_true = 1.0
     mag_scale = 100
 
@@ -155,22 +189,22 @@ def main():
     center = tuple(np.array(g.shape)/2)
 
     ## scale, rotate, translate
-    g_tmp = cv2.resize(g,None,fx=scale_true,fy=scale_true, interpolation = cv2.INTER_CUBIC)
-    g = g*0
-    if scale_true < 1.0:
-        row_tmp = g_tmp.shape[0]; col_tmp = g_tmp.shape[1] # row & col size
-        hrow_tmp = int(row_tmp/2); hcol_tmp = int(col_tmp/2)
-        row_slice = slice(int(center[0]-hrow_tmp),int(center[0]+hrow_tmp))
-        col_slice = slice(int(center[1]-hcol_tmp),int(center[1]+hcol_tmp))
-        g[row_slice,col_slice] = g_tmp
-    else:
-        center_tmp = tuple(np.array(g_tmp.shape)/2)
-        row_slice = slice(int(center_tmp[0]-hrow),int(center_tmp[0]+hrow))
-        col_slice = slice(int(center_tmp[1]-hcol),int(center_tmp[1]+hcol))
-        g = g_tmp[row_slice,col_slice]
+    # g_tmp = cv2.resize(g,None,fx=scale_true,fy=scale_true, interpolation = cv2.INTER_CUBIC)
+    # g = g*0
+    # if scale_true < 1.0:
+    #     row_tmp = g_tmp.shape[0]; col_tmp = g_tmp.shape[1] # row & col size
+    #     hrow_tmp = int(row_tmp/2); hcol_tmp = int(col_tmp/2)
+    #     row_slice = slice(int(center[0]-hrow_tmp),int(center[0]+hrow_tmp))
+    #     col_slice = slice(int(center[1]-hcol_tmp),int(center[1]+hcol_tmp))
+    #     g[row_slice,col_slice] = g_tmp
+    # else:
+    #     center_tmp = tuple(np.array(g_tmp.shape)/2)
+    #     row_slice = slice(int(center_tmp[0]-hrow),int(center_tmp[0]+hrow))
+    #     col_slice = slice(int(center_tmp[1]-hcol),int(center_tmp[1]+hcol))
+    #     g = g_tmp[row_slice,col_slice]
 
-    rotMat = cv2.getRotationMatrix2D(center, angle_true, 1.0)
-    g = cv2.warpAffine(g, rotMat, g.shape, flags=cv2.INTER_CUBIC)
+    # rotMat = cv2.getRotationMatrix2D(center, angle_true, 1.0)
+    # g = cv2.warpAffine(g, rotMat, g.shape, flags=cv2.INTER_CUBIC)
 
     transMat = np.float32([[1,0,trans_true[0]],[0,1,trans_true[1]]])
     g = cv2.warpAffine(g,transMat,(col,row))
@@ -201,8 +235,8 @@ def main():
     ## Log-Polar transform
     F = np.abs(F)
     G = np.abs(G)
-    FLP = cv2.logPolar(F, (F.shape[0]/2, F.shape[1]/2), mag_scale, cv2.INTER_NEAREST)
-    GLP = cv2.logPolar(G, (G.shape[0]/2, G.shape[1]/2), mag_scale, cv2.INTER_NEAREST)
+    FLP = cv2.logPolar(F, (F.shape[0]/2, F.shape[1]/2), mag_scale, cv2.INTER_LINEAR)
+    GLP = cv2.logPolar(G, (G.shape[0]/2, G.shape[1]/2), mag_scale, cv2.INTER_LINEAR)
 
     ## roll and slice
     FLP = np.roll(FLP,int(hcol),axis=1)
@@ -210,52 +244,61 @@ def main():
     FLP = FLP[slice(int(hrow)),slice(int(hcol))]
     GLP = GLP[slice(int(hrow)),slice(int(hcol))]
 
-    ## estimation
+    ## estimate angle & scale
     row_shift, col_shift, peak_map = fft_coreg(FLP,GLP)
     angle_est = - row_shift/(hrow) * 180
     scale_est = 1.0 - col_shift/mag_scale
 
-    print(angle_true,scale_true)
-    print(angle_est,scale_est)
-
     ## rescale, rerotate, retranslate
     # g_tmp = cv2.resize(g,None,fx=scale_est,fy=scale_est, interpolation = cv2.INTER_CUBIC)
-    # g = g*0
+    # g_coreg = g*0
     # if scale_est < 1.0:
     #     row_tmp = g_tmp.shape[0]; col_tmp = g_tmp.shape[1] # row & col size
     #     hrow_tmp = int(row_tmp/2); hcol_tmp = int(col_tmp/2)
     #     row_slice = slice(int(center[0]-hrow_tmp),int(center[0]+hrow_tmp))
     #     col_slice = slice(int(center[1]-hcol_tmp),int(center[1]+hcol_tmp))
-    #     g[row_slice,col_slice] = g_tmp
+    #     g_coreg[row_slice,col_slice] = g_tmp
     # else:
     #     center = tuple(np.array(g_tmp.shape)/2)
     #     row_slice = slice(int(center[0]-hrow),int(center[0]+hrow))
     #     col_slice = slice(int(center[1]-hcol),int(center[1]+hcol))
-    #     g = g_tmp[row_slice,col_slice]
+    #     g_coreg = g_tmp[row_slice,col_slice]
 
-    rotMat = cv2.getRotationMatrix2D(center, angle_est, 1.0)
-    g = cv2.warpAffine(g, rotMat, g.shape, flags=cv2.INTER_CUBIC)
-    
+    # rotMat = cv2.getRotationMatrix2D(center, angle_est, 1.0)
+    # g_coreg = cv2.warpAffine(g, rotMat, g.shape, flags=cv2.INTER_CUBIC)
+    g_coreg = g
+
+    ## estimate translation
+    row_shift, col_shift, g_coreg, peak_map = fft_coreg_trans(f,g_coreg)
+    # transMat = np.float32([[1,0,row_shift],[0,1,col_shift]])
+    # g_coreg = cv2.warpAffine(g_coreg,transMat,(col,row))
+
+    # print(angle_est,scale_est,row_shift,col_shift)
+
     ## plot figures
-    xx = np.linspace(-hrow, hrow, row)
-    yy = np.linspace(-hcol, hcol, col)
-    XX, YY = np.meshgrid(xx, yy)
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    surf = ax.plot_surface(XX, YY, hw, cmap='jet', linewidth=0)
-    fig.colorbar(surf)
-    ax.set_title("Hanning Module")
+    # xx = np.linspace(-hrow, hrow, row)
+    # yy = np.linspace(-hcol, hcol, col)
+    # XX, YY = np.meshgrid(xx, yy)
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # surf = ax.plot_surface(XX, YY, hw, cmap='jet', linewidth=0)
+    # fig.colorbar(surf)
+    # ax.set_title("Hanning Module")
+
+    print(np.max(f-g))
 
     plt.figure()
     plt.imshow(np.uint8(np.abs(f-g)), cmap=plt.get_cmap('gray'))
     plt.figure()
-    plt.imshow(np.uint8(F/np.max(F)*255), cmap=plt.get_cmap('gray'))
-    plt.figure()
-    plt.imshow(np.uint8(G/np.max(G)*255), cmap=plt.get_cmap('gray'))
-    plt.figure()
-    plt.imshow(np.uint8(FLP/np.max(FLP)*255), cmap=plt.get_cmap('gray'))
-    plt.figure()
-    plt.imshow(np.uint8(GLP/np.max(GLP)*255), cmap=plt.get_cmap('gray'))
+    plt.imshow(np.uint8(np.abs(f-g_coreg)), cmap=plt.get_cmap('gray'))
+    # plt.figure()
+    # plt.imshow(np.uint8(F/np.max(F)*255), cmap=plt.get_cmap('gray'))
+    # plt.figure()
+    # plt.imshow(np.uint8(G/np.max(G)*255), cmap=plt.get_cmap('gray'))
+    # plt.figure()
+    # plt.imshow(np.uint8(FLP/np.max(FLP)*255), cmap=plt.get_cmap('gray'))
+    # plt.figure()
+    # plt.imshow(np.uint8(GLP/np.max(GLP)*255), cmap=plt.get_cmap('gray'))
     plt.show()
 
 if __name__ == '__main__':
