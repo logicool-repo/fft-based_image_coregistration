@@ -237,9 +237,9 @@ def logpolar_module(f,g,mag_scale):
 def main():
 
     ## 
-    trans_true = [50, -5]
-    angle_true = 5
-    scale_true = 1.05
+    trans_true = [2, -5]
+    angle_true = 2
+    scale_true = 1.02
     mag_scale = 100
 
     ## load master and slave images
