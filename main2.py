@@ -243,14 +243,17 @@ def main():
     mag_scale = 100
 
     ## load master and slave images
-    img_dir = 'dark/'
-    f = np.asarray(cv2.imread(img_dir+'darkS24s-0002.png',0),dtype=np.float64)
-    g = np.asarray(cv2.imread(img_dir+'darkS24s-0003.png',0),dtype=np.float64)
+    img_dir = 'lena/'
+    f = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
+    g = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
+    # img_dir = 'dark/'
+    # f = np.asarray(cv2.imread(img_dir+'darkS24s-0002.png',0),dtype=np.float64)
+    # g = np.asarray(cv2.imread(img_dir+'darkS24s-0003.png',0),dtype=np.float64)
     f = f[slice(512),slice(512)]
     g = g[slice(512),slice(512)]
     row = f.shape[0]; col = f.shape[1] # row & col size
     hrow = int(row/2); hcol = int(col/2)
-    center = tuple(np.array(g.shape)/2)
+    center = tuple(np.array(f.shape)/2)
 
     ## scale, rotate, translate slave
 

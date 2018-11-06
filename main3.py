@@ -224,10 +224,6 @@ def logpolar_module(f,g,mag_scale):
     # fig.colorbar(surf)
     # ax.set_title("Hanning Module")
     # plt.figure()
-    # plt.imshow(np.uint8(f/np.max(f)*255), cmap=plt.get_cmap('gray'))
-    # plt.figure()
-    # plt.imshow(np.uint8(g/np.max(g)*255), cmap=plt.get_cmap('gray'))
-    # plt.figure()
     # plt.imshow(np.uint8(F/np.max(F)*255), cmap=plt.get_cmap('gray'))
     # plt.figure()
     # plt.imshow(np.uint8(G/np.max(G)*255), cmap=plt.get_cmap('gray'))
@@ -241,49 +237,49 @@ def logpolar_module(f,g,mag_scale):
 def main():
 
     ## 
-    trans_true = [2, -5]
-    angle_true = 2
-    scale_true = 1.02
+    trans_true = [0, 0]
+    angle_true = 45
+    scale_true = 1.0
     mag_scale = 100
+
+    # image frames & center
+    f = np.zeros((512,512))+1
+    g = np.zeros((512,512))+1
+    center_frm = [int(512/2),int(512/2)]
 
     ## load master and slave images
     img_dir = 'lena/'
-    f = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
-    g = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
-    row = f.shape[0]; col = f.shape[1] # row & col size
+    f_tmp = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
+    g_tmp = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
+    # img_dir = 'dark/'
+    # f_tmp = np.asarray(cv2.imread(img_dir+'darkS24s-0002.png',0),dtype=np.float64)
+    # g_tmp = np.asarray(cv2.imread(img_dir+'darkS24s-0003.png',0),dtype=np.float64)
+    f_tmp = f_tmp[slice(450),slice(450)]
+    g_tmp = g_tmp[slice(450),slice(450)]
+    
+    row = f_tmp.shape[0]; col = f_tmp.shape[1] # row & col size
     hrow = int(row/2); hcol = int(col/2)
-    center = tuple(np.array(f.shape)/2)
+
+    # place master in frame
+    f[slice(center_frm[0]-hrow,center_frm[0]+hrow),slice(center_frm[1]-hcol,center_frm[1]+hcol)] = f_tmp
 
     ## scale, rotate, translate slave
-    g_tmp = cv2.resize(g,None,fx=scale_true,fy=scale_true, interpolation = cv2.INTER_CUBIC)
-    g = g*0
-    if scale_true < 1.0:
-        row_tmp = g_tmp.shape[0]; col_tmp = g_tmp.shape[1] # row & col size
-        hrow_tmp = np.floor(row_tmp/2); hcol_tmp = np.floor(col_tmp/2)
-        if row_tmp % 2 == 0:
-            row_slice = slice(int(center[0]-hrow_tmp),int(center[0]+hrow_tmp))
-            col_slice = slice(int(center[1]-hcol_tmp),int(center[1]+hcol_tmp))
-        else:
-            row_slice = slice(int(center[0]-hrow_tmp),int(center[0]+hrow_tmp+1))
-            col_slice = slice(int(center[1]-hcol_tmp),int(center[1]+hcol_tmp+1))
-        g[row_slice,col_slice] = g_tmp
-    else:
-        row_tmp = g_tmp.shape[0]; col_tmp = g_tmp.shape[1] # row & col size
-        if row_tmp % 2 == 0:
-            center_tmp = np.array(g_tmp.shape)/2
-            row_slice = slice(int(center_tmp[0]-hrow),int(center_tmp[0]+hrow))
-            col_slice = slice(int(center_tmp[1]-hcol),int(center_tmp[1]+hcol))
-        else:
-            center_tmp = np.floor(np.array(g_tmp.shape)/2)
-            row_slice = slice(int(center_tmp[0]-hrow),int(center_tmp[0]+hrow))
-            col_slice = slice(int(center_tmp[1]-hcol),int(center_tmp[1]+hcol))
-        g = g_tmp[row_slice,col_slice]
-
-    rotMat = cv2.getRotationMatrix2D(center, angle_true, 1.0)
-    g = cv2.warpAffine(g, rotMat, g.shape, flags=cv2.INTER_CUBIC)
-
     transMat = np.float32([[1,0,trans_true[0]],[0,1,trans_true[1]]])
-    g = cv2.warpAffine(g,transMat,(col,row))
+    g_tmp = cv2.warpAffine(g_tmp,transMat,(col,row))
+    g_tmp = cv2.resize(g_tmp,None,fx=scale_true,fy=scale_true, interpolation = cv2.INTER_CUBIC)
+    center_tmp = tuple(np.array(g_tmp.shape[0:2])/2)
+    rotMat = cv2.getRotationMatrix2D(center_tmp, angle_true, 1.0)
+    g_tmp = cv2.warpAffine(g_tmp, rotMat, g_tmp.shape, flags=cv2.INTER_CUBIC)
+
+    row = g_tmp.shape[0]; col = g_tmp.shape[1] # row & col size
+    hrow = int(row/2); hcol = int(col/2)
+    
+    # place slave in frame
+    g[slice(center_frm[0]-hrow,center_frm[0]+hrow),slice(center_frm[1]-hcol,center_frm[1]+hcol)] = g_tmp
+
+    print(f.dtype)
+    print(g.dtype)
+
 
     ## Fourier log-magnitude spectra mapping in Log-Polar plane 
     FLP, GLP = logpolar_module(f,g,mag_scale)
@@ -294,19 +290,14 @@ def main():
     scale_est = 1.0 - col_shift/mag_scale
 
     ## rescale, rerotate, retranslate
-    rotMat = cv2.getRotationMatrix2D(center, angle_est, 1.0)
+    rotMat = cv2.getRotationMatrix2D(tuple(center_frm), angle_est, 1.0)
     g_coreg = cv2.warpAffine(g, rotMat, g.shape, flags=cv2.INTER_CUBIC)
 
     g_coreg_tmp = cv2.resize(g_coreg,None,fx=scale_est,fy=scale_est, interpolation = cv2.INTER_CUBIC)
-    row_coreg_tmp = g_coreg_tmp.shape[0]; col_coreg_tmp = g_coreg_tmp.shape[1]
-    g_coreg = np.zeros((row,col))
-    if row_coreg_tmp == row:
-        g_coreg = g_coreg_tmp
-    elif row_coreg_tmp > row:
-        g_coreg = g_coreg_tmp[slice(row),slice(col)]
-    else:
-        g_coreg[slice(row_coreg_tmp),slice(col_coreg_tmp)] = g_coreg_tmp
-
+    row = g_coreg_tmp.shape[0]; col = g_coreg_tmp.shape[1] # row & col size
+    hrow = int(row/2); hcol = int(col/2)
+    g_coreg[slice(center_frm[0]-hrow,center_frm[0]+hrow),slice(center_frm[1]-hcol,center_frm[1]+hcol)] = g_coreg_tmp
+    
     ## estimate translation
     row_shift, col_shift, peak_map, g_coreg = fft_coreg_trans(f,g_coreg)
 
@@ -327,7 +318,7 @@ def main():
     ax = fig.add_subplot(122)
     plt.imshow(np.uint8(np.abs(f-g_coreg)), cmap=plt.get_cmap('gray'))
     plt.title('registered')
-    ax.annotate('dx = ' + str(round(row_shift,2)) + ',' + 'dy = ' + str(round(col_shift,2)) + '\n'
+    ax.annotate('dx = ' + str(round(col_shift,2)) + ',' + 'dy = ' + str(round(row_shift,2)) + '\n'
             'rotation = ' + str(round(angle_est,2)) + ' (deg)' + '\n'
             'scale = ' + str(round(scale_est,2)),
             xy=(1, 0), xycoords='axes fraction',
