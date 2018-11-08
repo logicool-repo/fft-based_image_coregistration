@@ -241,21 +241,21 @@ def logpolar_module(f,g,mag_scale):
 def main():
 
     ## 
-    trans_true = [2,-5]
-    angle_true = 2
-    scale_true = 1.02
+    trans_true = [0,0]
+    angle_true = 0
+    scale_true = 1
     mag_scale = 100
 
     ## load master and slave images
-    img_dir = 'lena/'
-    f = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
-    g = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
-    # img_dir = 'dark/'
-    # f = np.asarray(cv2.imread(img_dir+'darkS24s-0002.png',0),dtype=np.float64)
-    # g = np.asarray(cv2.imread(img_dir+'darkS24s-0003.png',0),dtype=np.float64)
+    # img_dir = 'lena/'
+    # f = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
+    # g = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
+    img_dir = 'dark/'
+    f = np.asarray(cv2.imread(img_dir+'darkS24s-0002.png',0),dtype=np.float64)
+    g = np.asarray(cv2.imread(img_dir+'darkS24s-0003.png',0),dtype=np.float64)
     f = f[slice(512),slice(512)]
     g = g[slice(512),slice(512)]
-    
+
     row = f.shape[0]; col = f.shape[1] # row & col size
     hrow = int(row/2); hcol = int(col/2)
     center = tuple(np.array(f.shape)/2)
