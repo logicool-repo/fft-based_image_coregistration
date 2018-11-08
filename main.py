@@ -241,21 +241,37 @@ def logpolar_module(f,g,mag_scale):
 def main():
 
     ## 
-    trans_true = [2, -5]
-    angle_true = 2
-    scale_true = 1.02
+    # trans_true = [2, -5]
+    # angle_true = 2
+    # scale_true = 1.02
+    # mag_scale = 100
+    trans_true = [1,2]
+    angle_true = 3
+    scale_true = 1.2
     mag_scale = 100
 
     ## load master and slave images
-    img_dir = 'lena/'
-    f = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
-    g = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
+    # img_dir = 'lena/'
+    # f = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
+    # g = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
+    img_dir = 'dark/'
+    f = np.asarray(cv2.imread(img_dir+'darkS24s-0002.png',0),dtype=np.float64)
+    g = np.asarray(cv2.imread(img_dir+'darkS24s-0003.png',0),dtype=np.float64)
+    f = f[slice(512),slice(512)]
+    g = g[slice(512),slice(512)]
+    
     row = f.shape[0]; col = f.shape[1] # row & col size
     hrow = int(row/2); hcol = int(col/2)
     center = tuple(np.array(f.shape)/2)
 
     ## scale, rotate, translate slave
+    transMat = np.float32([[1,0,trans_true[0]],[0,1,trans_true[1]]])
+    g = cv2.warpAffine(g,transMat,(col,row))
+
     g_tmp = cv2.resize(g,None,fx=scale_true,fy=scale_true, interpolation = cv2.INTER_CUBIC)
+    row_pad = int(g_tmp.shape[0]/2 - 512/2)
+    col_pad = int(g_tmp.shape[1]/2 - 512/2)
+    
     g = g*0
     if scale_true < 1.0:
         row_tmp = g_tmp.shape[0]; col_tmp = g_tmp.shape[1] # row & col size
@@ -282,9 +298,6 @@ def main():
     rotMat = cv2.getRotationMatrix2D(center, angle_true, 1.0)
     g = cv2.warpAffine(g, rotMat, g.shape, flags=cv2.INTER_CUBIC)
 
-    transMat = np.float32([[1,0,trans_true[0]],[0,1,trans_true[1]]])
-    g = cv2.warpAffine(g,transMat,(col,row))
-
     ## Fourier log-magnitude spectra mapping in Log-Polar plane 
     FLP, GLP = logpolar_module(f,g,mag_scale)
 
@@ -310,11 +323,19 @@ def main():
     ## estimate translation
     row_shift, col_shift, peak_map, g_coreg = fft_coreg_trans(f,g_coreg)
 
+    ## check estimates
+    print('x_shift = ' + str(col_shift-col_pad))
+    print('y_shift = ' + str(row_shift-row_pad))
+    print(angle_est)
+    print(scale_est)
+
     ## plot figures
     fig = plt.figure(figsize=(14,7))
     ax = fig.add_subplot(121)
     plt.imshow(np.uint8(np.abs(f-g)), cmap=plt.get_cmap('gray'))
     plt.title('unregistered')
+    plt.xlabel('x')
+    plt.ylabel('y')
     ax.annotate('dx = ' + str(trans_true[0]) + ',' + 'dy = ' + str(trans_true[1]) + '\n'
             'rotation = ' + str(angle_true) + ' (deg)' + '\n'
             'scale = ' + str(scale_true),
@@ -327,7 +348,9 @@ def main():
     ax = fig.add_subplot(122)
     plt.imshow(np.uint8(np.abs(f-g_coreg)), cmap=plt.get_cmap('gray'))
     plt.title('registered')
-    ax.annotate('dx = ' + str(round(row_shift,2)) + ',' + 'dy = ' + str(round(col_shift,2)) + '\n'
+    plt.xlabel('x')
+    plt.ylabel('y')
+    ax.annotate('dx = ' + str(round(col_shift-col_pad,2)) + ',' + 'dy = ' + str(round(row_shift-row_pad,2)) + '\n'
             'rotation = ' + str(round(angle_est,2)) + ' (deg)' + '\n'
             'scale = ' + str(round(scale_est,2)),
             xy=(1, 0), xycoords='axes fraction',
