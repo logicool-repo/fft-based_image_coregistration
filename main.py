@@ -205,8 +205,8 @@ def logpolar_module(f,g,mag_scale):
     ## Log-Polar transform
     F = np.abs(F)
     G = np.abs(G)
-    FLP = cv2.logPolar(F, (F.shape[0]/2, F.shape[1]/2), mag_scale, cv2.INTER_LINEAR)
-    GLP = cv2.logPolar(G, (G.shape[0]/2, G.shape[1]/2), mag_scale, cv2.INTER_LINEAR)
+    FLP = cv2.logPolar(F, (F.shape[0]/2, F.shape[1]/2), mag_scale, cv2.INTER_LANCZOS4)
+    GLP = cv2.logPolar(G, (G.shape[0]/2, G.shape[1]/2), mag_scale, cv2.INTER_LANCZOS4)
 
     ## roll and slice
     FLP = np.roll(FLP,int(hcol),axis=1)
@@ -241,9 +241,9 @@ def logpolar_module(f,g,mag_scale):
 def main():
 
     ## 
-    trans_true = [0,0]
-    angle_true = 0
-    scale_true = 1
+    trans_true = [2,-3]
+    angle_true = 3
+    scale_true = 1.002
     mag_scale = 100
 
     ## load master and slave images
@@ -264,7 +264,7 @@ def main():
     transMat = np.float32([[1,0,trans_true[0]],[0,1,trans_true[1]]])
     g = cv2.warpAffine(g,transMat,(col,row))
 
-    g_tmp = cv2.resize(g,None,fx=scale_true,fy=scale_true, interpolation = cv2.INTER_CUBIC)
+    g_tmp = cv2.resize(g,None,fx=scale_true,fy=scale_true, interpolation = cv2.INTER_LANCZOS4)
     row_pad = int(g_tmp.shape[0]/2 - 512/2)
     col_pad = int(g_tmp.shape[1]/2 - 512/2)
     
@@ -292,7 +292,7 @@ def main():
         g = g_tmp[row_slice,col_slice]
 
     rotMat = cv2.getRotationMatrix2D(center, angle_true, 1.0)
-    g = cv2.warpAffine(g, rotMat, g.shape, flags=cv2.INTER_CUBIC)
+    g = cv2.warpAffine(g, rotMat, g.shape, flags=cv2.INTER_LANCZOS4)
 
     ## Fourier log-magnitude spectra mapping in Log-Polar plane 
     FLP, GLP = logpolar_module(f,g,mag_scale)
@@ -304,9 +304,9 @@ def main():
 
     ## rescale, rerotate, retranslate
     rotMat = cv2.getRotationMatrix2D(center, angle_est, 1.0)
-    g_coreg = cv2.warpAffine(g, rotMat, g.shape, flags=cv2.INTER_CUBIC)
+    g_coreg = cv2.warpAffine(g, rotMat, g.shape, flags=cv2.INTER_LANCZOS4)
 
-    g_coreg_tmp = cv2.resize(g_coreg,None,fx=scale_est,fy=scale_est, interpolation = cv2.INTER_CUBIC)
+    g_coreg_tmp = cv2.resize(g_coreg,None,fx=scale_est,fy=scale_est, interpolation = cv2.INTER_LANCZOS4)
     row_coreg_tmp = g_coreg_tmp.shape[0]; col_coreg_tmp = g_coreg_tmp.shape[1]
     g_coreg = np.zeros((row,col))
     if row_coreg_tmp == row:
