@@ -241,22 +241,18 @@ def logpolar_module(f,g,mag_scale):
 def main():
 
     ## 
-    # trans_true = [2, -5]
-    # angle_true = 2
-    # scale_true = 1.02
-    # mag_scale = 100
-    trans_true = [1,2]
-    angle_true = 3
-    scale_true = 1.2
+    trans_true = [2,-5]
+    angle_true = 2
+    scale_true = 1.02
     mag_scale = 100
 
     ## load master and slave images
-    # img_dir = 'lena/'
-    # f = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
-    # g = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
-    img_dir = 'dark/'
-    f = np.asarray(cv2.imread(img_dir+'darkS24s-0002.png',0),dtype=np.float64)
-    g = np.asarray(cv2.imread(img_dir+'darkS24s-0003.png',0),dtype=np.float64)
+    img_dir = 'lena/'
+    f = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
+    g = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
+    # img_dir = 'dark/'
+    # f = np.asarray(cv2.imread(img_dir+'darkS24s-0002.png',0),dtype=np.float64)
+    # g = np.asarray(cv2.imread(img_dir+'darkS24s-0003.png',0),dtype=np.float64)
     f = f[slice(512),slice(512)]
     g = g[slice(512),slice(512)]
     
@@ -352,7 +348,7 @@ def main():
     plt.ylabel('y')
     ax.annotate('dx = ' + str(round(col_shift-col_pad,2)) + ',' + 'dy = ' + str(round(row_shift-row_pad,2)) + '\n'
             'rotation = ' + str(round(angle_est,2)) + ' (deg)' + '\n'
-            'scale = ' + str(round(scale_est,2)),
+            'scale = ' + str(round(scale_est,4)),
             xy=(1, 0), xycoords='axes fraction',
             xytext=(-20, 20), textcoords='offset pixels',
             horizontalalignment='right',
