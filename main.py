@@ -215,44 +215,41 @@ def logpolar_module(f,g,mag_scale):
     GLP = GLP[slice(int(hrow)),slice(int(hcol))]
 
     ## plot figs
-    xx = np.linspace(-hrow, hrow, row)
-    yy = np.linspace(-hcol, hcol, col)
-    XX, YY = np.meshgrid(xx, yy)
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    surf = ax.plot_surface(XX, YY, hw, cmap='jet', linewidth=0)
-    fig.colorbar(surf)
-    ax.set_title("Hanning Module")
-    plt.figure()
-    plt.imshow(np.uint8(f/np.max(f)*255), cmap=plt.get_cmap('gray'))
-    plt.figure()
-    plt.imshow(np.uint8(g/np.max(g)*255), cmap=plt.get_cmap('gray'))
-    plt.figure()
-    plt.imshow(np.uint8(F/np.max(F)*255), cmap=plt.get_cmap('gray'))
-    plt.figure()
-    plt.imshow(np.uint8(G/np.max(G)*255), cmap=plt.get_cmap('gray'))
-    plt.figure()
-    plt.imshow(np.uint8(FLP/np.max(FLP)*255), cmap=plt.get_cmap('gray'))
-    plt.figure()
-    plt.imshow(np.uint8(GLP/np.max(GLP)*255), cmap=plt.get_cmap('gray'))
+    # xx = np.linspace(-hrow, hrow, row)
+    # yy = np.linspace(-hcol, hcol, col)
+    # XX, YY = np.meshgrid(xx, yy)
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # surf = ax.plot_surface(XX, YY, hw, cmap='jet', linewidth=0)
+    # fig.colorbar(surf)
+    # ax.set_title("Hanning Module")
+    # plt.figure()
+    # plt.imshow(np.uint8(f/np.max(f)*255), cmap=plt.get_cmap('gray'))
+    # plt.figure()
+    # plt.imshow(np.uint8(g/np.max(g)*255), cmap=plt.get_cmap('gray'))
+    # plt.figure()
+    # plt.imshow(np.uint8(F/np.max(F)*255), cmap=plt.get_cmap('gray'))
+    # plt.figure()
+    # plt.imshow(np.uint8(G/np.max(G)*255), cmap=plt.get_cmap('gray'))
+    # plt.figure()
+    # plt.imshow(np.uint8(FLP/np.max(FLP)*255), cmap=plt.get_cmap('gray'))
+    # plt.figure()
+    # plt.imshow(np.uint8(GLP/np.max(GLP)*255), cmap=plt.get_cmap('gray'))
 
     return FLP, GLP
 
 def main():
 
     ## 
-    trans_true = [2,-3]
-    angle_true = 3
+    trans_true = [2,-5]
+    angle_true = 2
     scale_true = 1.002
     mag_scale = 100
 
     ## load master and slave images
-    # img_dir = 'lena/'
-    # f = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
-    # g = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
-    img_dir = 'dark/'
-    f = np.asarray(cv2.imread(img_dir+'darkS24s-0002.png',0),dtype=np.float64)
-    g = np.asarray(cv2.imread(img_dir+'darkS24s-0003.png',0),dtype=np.float64)
+    img_dir = 'lena/'
+    f = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
+    g = np.asarray(cv2.imread(img_dir+'lena512.png',0),dtype=np.float64)
     f = f[slice(512),slice(512)]
     g = g[slice(512),slice(512)]
 
