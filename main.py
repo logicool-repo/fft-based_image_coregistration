@@ -226,8 +226,8 @@ def main():
 
     ## set slave shift/rotate/scale values
     trans_true = [2,-5]
-    angle_true = 2
-    scale_true = 1.002
+    angle_true = 30
+    scale_true = 1.05
     mag_scale = 100
 
     ## load master and slave images
@@ -312,8 +312,20 @@ def main():
     ## plot figures
     fig = plt.figure(figsize=(14,7))
     ax = fig.add_subplot(121)
+    plt.imshow(np.uint8(np.abs(f)), cmap=plt.get_cmap('gray'))
+    plt.title('master')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    ax = fig.add_subplot(122)
+    plt.imshow(np.uint8(np.abs(g)), cmap=plt.get_cmap('gray'))
+    plt.title('slave')
+    plt.xlabel('x')
+    plt.ylabel('y')
+
+    fig = plt.figure(figsize=(14,7))
+    ax = fig.add_subplot(121)
     plt.imshow(np.uint8(np.abs(f-g)), cmap=plt.get_cmap('gray'))
-    plt.title('unregistered')
+    plt.title('master-slave (unregistered)')
     plt.xlabel('x')
     plt.ylabel('y')
     ax.annotate('dx = ' + str(trans_true[0]) + ',' + 'dy = ' + str(trans_true[1]) + '\n'
@@ -327,7 +339,7 @@ def main():
 
     ax = fig.add_subplot(122)
     plt.imshow(np.uint8(np.abs(f-g_coreg)), cmap=plt.get_cmap('gray'))
-    plt.title('registered')
+    plt.title('master-slave (registered)')
     plt.xlabel('x')
     plt.ylabel('y')
     ax.annotate('dx = ' + str(round(col_shift-col_pad,2)) + ',' + 'dy = ' + str(round(row_shift-row_pad,2)) + '\n'
