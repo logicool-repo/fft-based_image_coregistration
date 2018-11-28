@@ -240,10 +240,11 @@ def main():
     hrow = int(row/2); hcol = int(col/2)
     center = tuple(np.array(f.shape)/2)
 
-    ## scale, rotate, translate slave
+    ## translate slave
     transMat = np.float32([[1,0,trans_true[0]],[0,1,trans_true[1]]])
     g = cv2.warpAffine(g,transMat,(col,row))
 
+    ## scale slave
     g_tmp = cv2.resize(g,None,fx=scale_true,fy=scale_true, interpolation = cv2.INTER_LANCZOS4)
     row_pad = int(g_tmp.shape[0]/2 - 512/2)
     col_pad = int(g_tmp.shape[1]/2 - 512/2)
@@ -271,6 +272,7 @@ def main():
             col_slice = slice(int(center_tmp[1]-hcol),int(center_tmp[1]+hcol))
         g = g_tmp[row_slice,col_slice]
 
+    ## rotate slave
     rotMat = cv2.getRotationMatrix2D(center, angle_true, 1.0)
     g = cv2.warpAffine(g, rotMat, g.shape, flags=cv2.INTER_LANCZOS4)
 
