@@ -45,11 +45,11 @@ def fft_coreg_LP(master,slave):
     # master = master * hw
     # slave = slave * hw
 
-    # fft2
+    ## fft2
     master_fd = fft2(master)
     slave_fd = fft2(slave)
 
-    # normalization
+    ## normalization
     master_nfd = master_fd/np.abs(master_fd)
     slave_nfd = slave_fd/np.abs(slave_fd)
 
@@ -70,59 +70,69 @@ def dftregistration(buf1ft,buf2ft,usfac):
     Nc = ifftshift(np.arange(-np.fix(nc/2),np.ceil(nc/2)))
 
     if usfac == 0:
-        # Simple computation of error and phase difference without registration
+
+        ## Simple computation of error and phase difference without registration
         CCmax = np.sum(buf1ft*np.conjugate(buf2ft))
         row_shift = 0
         col_shift = 0
+
     elif usfac == 1:
-        # Single pixel registration
+
+        ## Single pixel registration
         CC = ifft2(buf1ft*np.conjugate(buf2ft))
         CCabs = np.abs(CC)
         row_shift, col_shift = np.where(CCabs == np.max(CCabs))
         CCmax = CC[row_shift,col_shift]*nr*nc
-        # Now change shifts so that they represent relative shifts and not indices
+
+        ## Now change shifts so that they represent relative shifts and not indices
         row_shift = Nr[row_shift]
         col_shift = Nc[col_shift]
     elif usfac > 1:
-        # Start with usfac == 2
+
+        ## Start with usfac == 2
         CC = ifft2(FTpad(buf1ft*np.conjugate(buf2ft),(2*nr,2*nc)))
         CCabs = np.abs(CC)
         
-        ##
+        ## generate peak map
         row_shift, col_shift = np.where(CCabs == np.max(CCabs))
         peak_map = ifftshift(CCabs)
         peak_map = np.roll(peak_map,-row_shift,axis=0)
         peak_map = np.roll(peak_map,-col_shift,axis=1)
-        ##
         
-        # row_shift, col_shift = row_shift[0], col_shift[0]
+        ## row_shift, col_shift = row_shift[0], col_shift[0]
         CCmax = CC[row_shift,col_shift]*nr*nc
-        # Now change shifts so that they represent relative shifts and not indices
+
+        ## Now change shifts so that they represent relative shifts and not indices
         Nr2 = ifftshift(np.arange(-np.fix(nr),np.ceil(nr)))
         Nc2 = ifftshift(np.arange(-np.fix(nc),np.ceil(nc)))
         row_shift = Nr2[row_shift]/2
         col_shift = Nc2[col_shift]/2
 
-        # If upsampling > 2, then refine estimate with matrix multiply DFT
+        ## If upsampling > 2, then refine estimate with matrix multiply DFT
         if usfac > 2:
-            # DFT computation
-            # Initial shift estimate in upsampled grid
+
+            ## DFT computation
+
+            ## Initial shift estimate in upsampled grid
             row_shift = np.round(row_shift*usfac)/usfac
             col_shift = np.round(col_shift*usfac)/usfac
             dftshift = np.fix(np.ceil(usfac*1.5)/2) ## Center of output array at dftshift+1
-            # Matrix multiply DFT around the current shift estimate
+
+            ## Matrix multiply DFT around the current shift estimate
             CC = np.conjugate(dftups(buf2ft*np.conjugate(buf1ft),np.ceil(usfac*1.5),np.ceil(usfac*1.5),usfac,dftshift-row_shift*usfac,dftshift-col_shift*usfac))
-            # Locate maximum and map back to original pixel grid 
+
+            ## Locate maximum and map back to original pixel grid 
             CCabs = np.abs(CC)
             rloc, cloc = np.where(CCabs == np.max(CCabs))
-            # rloc, cloc = rloc[0], cloc[0]
+
+            ## rloc, cloc = rloc[0], cloc[0]
             CCmax = CC[rloc,cloc]
             rloc = rloc - dftshift
             cloc = cloc - dftshift
             row_shift = row_shift + rloc/usfac
             col_shift = col_shift + cloc/usfac
 
-        # If its only one row or column the mportift along that dimension has no effect. Set to zero.
+        ## If its only one row or column the mportift along that dimension has no effect. Set to zero.
         if nr == 1:
             row_shift = 0
 
@@ -145,7 +155,7 @@ def dftups(in_arr,nor,noc,usfac,roff,coff):
 
     nr,nc=in_arr.shape
 
-    # Compute kernels and obtain DFT by matrix products
+    ## Compute kernels and obtain DFT by matrix products
     kernc=np.exp((-1j*2*np.pi/(nc*usfac))*( ifftshift(np.arange(0,nc)[:, np.newaxis]) - np.floor(nc/2) )*( np.arange(0,noc) - coff ))
     kernr=np.exp((-1j*2*np.pi/(nr*usfac))*( np.arange(0,nor)[:, np.newaxis] - roff )*( ifftshift(np.arange(0,nr)) - np.floor(nr/2)  ))
 
