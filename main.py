@@ -21,6 +21,7 @@ def fft_coreg_trans(master,slave):
     master_nfd = master_fd/np.abs(master_fd)
     slave_nfd = slave_fd/np.abs(slave_fd)
 
+    ## shift estimation
     usfac = 100
     output, Nc, Nr, peak_map = dftregistration(master_nfd,slave_nfd,usfac)
 
