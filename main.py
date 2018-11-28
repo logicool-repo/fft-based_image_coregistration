@@ -6,20 +6,18 @@ from mpl_toolkits.mplot3d import Axes3D
 
 def fft_coreg_trans(master,slave):
 
-    slave0 = slave
-
-    # hunning
+    ## hunning
     # hy = np.hanning(master.shape[0])
     # hx = np.hanning(master.shape[1])
     # hw = hy.reshape(hy.shape[0],1) * hx
     # master = master * hw
     # slave = slave * hw
 
-    # fft2
+    ## fft2
     master_fd = fft2(master)
     slave_fd = fft2(slave)
 
-    # normalization
+    ## normalization
     master_nfd = master_fd/np.abs(master_fd)
     slave_nfd = slave_fd/np.abs(slave_fd)
 
@@ -31,14 +29,12 @@ def fft_coreg_trans(master,slave):
     row_shift = output[2]
     col_shift = output[3]
 
-    # coregistration
-    # slave0_fd = fft2(slave0)
-    slave0_fd = slave_fd
-    slave1_fd = slave0_fd*np.exp(1j*2*np.pi*(-row_shift*Nr/nr-col_shift*Nc/nc))*np.exp(1j*diffphase)
-    slave1 = ifft2(slave1_fd)
-    slave1 = np.abs(slave1)
+    ## coregistration
+    slave_fd_crg = slave_fd*np.exp(1j*2*np.pi*(-row_shift*Nr/nr-col_shift*Nc/nc))*np.exp(1j*diffphase)
+    slave_crg = ifft2(slave_fd_crg)
+    slave_crg = np.abs(slave_crg)
 
-    return row_shift[0], col_shift[0], peak_map, slave1
+    return row_shift[0], col_shift[0], peak_map, slave_crg
 
 def fft_coreg_LP(master,slave):
 
@@ -109,7 +105,7 @@ def dftregistration(buf1ft,buf2ft,usfac):
 
         # If upsampling > 2, then refine estimate with matrix multiply DFT
         if usfac > 2:
-            ### DFT computation ###
+            # DFT computation
             # Initial shift estimate in upsampled grid
             row_shift = np.round(row_shift*usfac)/usfac
             col_shift = np.round(col_shift*usfac)/usfac
@@ -126,8 +122,7 @@ def dftregistration(buf1ft,buf2ft,usfac):
             row_shift = row_shift + rloc/usfac
             col_shift = col_shift + cloc/usfac
 
-        # If its only one row or column the mportift along that dimension has no
-        # effect. Set to zero.
+        # If its only one row or column the mportift along that dimension has no effect. Set to zero.
         if nr == 1:
             row_shift = 0
 
@@ -214,33 +209,11 @@ def logpolar_module(f,g,mag_scale):
     FLP = FLP[slice(int(hrow)),slice(int(hcol))]
     GLP = GLP[slice(int(hrow)),slice(int(hcol))]
 
-    ## plot figs
-    # xx = np.linspace(-hrow, hrow, row)
-    # yy = np.linspace(-hcol, hcol, col)
-    # XX, YY = np.meshgrid(xx, yy)
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # surf = ax.plot_surface(XX, YY, hw, cmap='jet', linewidth=0)
-    # fig.colorbar(surf)
-    # ax.set_title("Hanning Module")
-    # plt.figure()
-    # plt.imshow(np.uint8(f/np.max(f)*255), cmap=plt.get_cmap('gray'))
-    # plt.figure()
-    # plt.imshow(np.uint8(g/np.max(g)*255), cmap=plt.get_cmap('gray'))
-    # plt.figure()
-    # plt.imshow(np.uint8(F/np.max(F)*255), cmap=plt.get_cmap('gray'))
-    # plt.figure()
-    # plt.imshow(np.uint8(G/np.max(G)*255), cmap=plt.get_cmap('gray'))
-    # plt.figure()
-    # plt.imshow(np.uint8(FLP/np.max(FLP)*255), cmap=plt.get_cmap('gray'))
-    # plt.figure()
-    # plt.imshow(np.uint8(GLP/np.max(GLP)*255), cmap=plt.get_cmap('gray'))
-
     return FLP, GLP
 
 def main():
 
-    ## 
+    ## set slave shift/rotate/scale values
     trans_true = [2,-5]
     angle_true = 2
     scale_true = 1.002
@@ -319,8 +292,8 @@ def main():
     ## check estimates
     print('x_shift = ' + str(col_shift-col_pad))
     print('y_shift = ' + str(row_shift-row_pad))
-    print(angle_est)
-    print(scale_est)
+    print('rotate angle = ' + str(angle_est))
+    print('scale = ' + str(scale_est))
 
     ## plot figures
     fig = plt.figure(figsize=(14,7))
