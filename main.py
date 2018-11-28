@@ -284,10 +284,11 @@ def main():
     angle_est = - row_shift/(hrow) * 180
     scale_est = 1.0 - col_shift/mag_scale
 
-    ## rescale, rerotate, retranslate
+    ## rotate slave
     rotMat = cv2.getRotationMatrix2D(center, angle_est, 1.0)
     g_coreg = cv2.warpAffine(g, rotMat, g.shape, flags=cv2.INTER_LANCZOS4)
 
+    ## scale slave
     g_coreg_tmp = cv2.resize(g_coreg,None,fx=scale_est,fy=scale_est, interpolation = cv2.INTER_LANCZOS4)
     row_coreg_tmp = g_coreg_tmp.shape[0]; col_coreg_tmp = g_coreg_tmp.shape[1]
     g_coreg = np.zeros((row,col))
@@ -298,7 +299,7 @@ def main():
     else:
         g_coreg[slice(row_coreg_tmp),slice(col_coreg_tmp)] = g_coreg_tmp
 
-    ## estimate translation
+    ## estimate translation & translate slave
     row_shift, col_shift, peak_map, g_coreg = fft_coreg_trans(f,g_coreg)
 
     ## check estimates
